@@ -3,6 +3,9 @@
 {{- $email := promptStringOnce . "email" "Email (for git commits)" (env "DEVENV_EMAIL") -}}
 {{- $bindings := promptBoolOnce . "bindings" "Install bindings profile (Java, Maven, Gradle, .NET)" (eq (env "DEVENV_BINDINGS") "1") -}}
 {{- $ssoUrl := promptStringOnce . "aws_sso_start_url" "AWS access portal URL from IAM Identity Center, e.g. https://d-xxxx.awsapps.com/start (blank to skip AWS; see README 'AWS setup')" "" -}}
+{{- if and $ssoUrl (not (hasPrefix "https://" $ssoUrl)) -}}
+{{-   fail (printf "AWS access portal URL must start with https:// (got %q). Fix it with `chezmoi edit-config`, or run `chezmoi init --prompt` to answer again." $ssoUrl) -}}
+{{- end -}}
 {{- $ssoRegion := "us-east-1" -}}
 {{- $account := "" -}}
 {{- $ssoRole := "AdministratorAccess" -}}
