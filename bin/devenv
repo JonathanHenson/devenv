@@ -106,7 +106,12 @@ ssh_setup() {
     ssh-keygen -t ed25519 -C "$(git config user.email) $(scutil --get LocalHostName 2>/dev/null || hostname -s)" -f "$key"
     ssh-add --apple-use-keychain "$key" || true
   fi
-  gh auth status >/dev/null 2>&1 || gh auth login --git-protocol https --web
+  local scopes="admin:public_key,admin:ssh_signing_key"
+  if gh auth status >/dev/null 2>&1; then
+    gh auth refresh -h github.com -s "$scopes"
+  else
+    gh auth login -h github.com --git-protocol https --web -s "$scopes"
+  fi
   local title; title="$(scutil --get ComputerName 2>/dev/null || hostname -s)"
   gh ssh-key add "$key.pub" --type authentication --title "$title" || true
   gh ssh-key add "$key.pub" --type signing --title "$title (signing)" || true
