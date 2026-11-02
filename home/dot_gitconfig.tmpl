@@ -1,0 +1,52 @@
+# Managed by devenv (chezmoi).
+[user]
+	name = {{ .name }}
+	email = {{ .email }}
+{{- if stat (joinPath .chezmoi.homeDir ".ssh/id_ed25519.pub") }}
+	signingkey = ~/.ssh/id_ed25519.pub
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true
+{{- end }}
+[init]
+	defaultBranch = main
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
+[diff]
+	algorithm = histogram
+	colorMoved = default
+[merge]
+	conflictstyle = zdiff3
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true
+[rerere]
+	enabled = true
+[rebase]
+	autoStash = true
+	updateRefs = true
+[credential "https://github.com"]
+	helper =
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !/opt/homebrew/bin/gh auth git-credential
+# Repos under ~/source/work/ can use a separate identity (unmanaged file).
+[includeIf "gitdir:~/source/work/"]
+	path = ~/.config/git/work.gitconfig
+# Machine-specific overrides (unmanaged file).
+[include]
+	path = ~/.gitconfig.local

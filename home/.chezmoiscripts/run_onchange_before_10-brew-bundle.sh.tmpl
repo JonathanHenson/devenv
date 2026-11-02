@@ -1,0 +1,12 @@
+#!/bin/bash
+# Re-runs whenever a Brewfile changes.
+# core     {{ include (joinPath .chezmoi.workingTree "brew/Brewfile.core") | sha256sum }}
+# bindings {{ include (joinPath .chezmoi.workingTree "brew/Brewfile.bindings") | sha256sum }} {{ .bindings }}
+# apps     {{ include (joinPath .chezmoi.workingTree "brew/Brewfile.apps") | sha256sum }}
+set -euo pipefail
+eval "$(/opt/homebrew/bin/brew shellenv)"
+BREWDIR={{ joinPath .chezmoi.workingTree "brew" | quote }}
+for f in core apps{{ if .bindings }} bindings{{ end }}; do
+  echo "==> brew bundle: Brewfile.$f"
+  brew bundle --no-upgrade --file="$BREWDIR/Brewfile.$f"
+done

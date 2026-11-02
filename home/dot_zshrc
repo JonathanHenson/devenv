@@ -1,0 +1,42 @@
+# Managed by devenv (chezmoi): edit in ~/source/devenv, then `chezmoi apply`.
+# Machine-specific additions go in ~/.zshrc.local (not managed).
+
+_has() { (( $+commands[$1] )) }
+
+# History
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=100000
+SAVEHIST=100000
+setopt extended_history share_history hist_ignore_all_dups hist_ignore_space hist_reduce_blanks
+
+# General
+setopt auto_cd interactive_comments no_beep
+bindkey -e
+
+# Completion
+mkdir -p "$HOME/.cache/zsh"
+autoload -Uz compinit bashcompinit
+compinit -d "$HOME/.cache/zsh/zcompdump"
+bashcompinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+_has aws_completer && complete -C aws_completer aws
+
+# Tool hooks
+_has mise     && eval "$(mise activate zsh)"
+_has direnv   && eval "$(direnv hook zsh)"
+_has zoxide   && eval "$(zoxide init zsh)"
+_has fzf      && source <(fzf --zsh)
+_has starship && eval "$(starship init zsh)"
+
+# Aliases and functions
+for f in "$HOME"/.config/zsh/{aliases,functions}.zsh; do
+  [[ -f "$f" ]] && source "$f"
+done
+
+# Plugins (syntax highlighting must load last)
+[[ -f $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] &&
+  source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+[[ -f $HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] &&
+  source $HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install shellcheck
+      - name: shellcheck
+        run: shellcheck install.sh bin/devenv home/.chezmoiscripts/run_once_before_00-xcode-clt.sh
+
+  install:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        bindings: ["0", "1"]
+    env:
+      DEVENV_NONINTERACTIVE: "1"
+      DEVENV_SOURCE: ${{ github.workspace }}
+      DEVENV_NAME: CI
+      DEVENV_EMAIL: ci@example.com
+      DEVENV_BINDINGS: ${{ matrix.bindings }}
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: install
+        run: ./install.sh
+      - name: idempotent (second apply changes nothing)
+        run: |
+          chezmoi apply --no-tty
+          test -z "$(chezmoi status)"
+      - name: doctor
+        run: zsh -lc 'devenv doctor --ci'

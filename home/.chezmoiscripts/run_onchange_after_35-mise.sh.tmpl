@@ -1,0 +1,7 @@
+#!/bin/bash
+# Node (for CDK), aws-cdk, and Java when the bindings profile is on.
+# config {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }} {{ .bindings }}
+set -euo pipefail
+eval "$(/opt/homebrew/bin/brew shellenv)"
+mise install --yes
+mise reshim

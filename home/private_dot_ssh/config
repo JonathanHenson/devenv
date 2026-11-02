@@ -1,0 +1,11 @@
+# Managed by devenv (chezmoi). Host-specific entries go in ~/.ssh/config.local.
+Include ~/.ssh/config.local
+
+Host github.com
+  User git
+
+Host *
+  IdentityFile ~/.ssh/id_ed25519
+  AddKeysToAgent yes
+  UseKeychain yes
+  ServerAliveInterval 60

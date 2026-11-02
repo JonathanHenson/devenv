@@ -1,0 +1,8 @@
+#!/bin/bash
+# Python interpreters and CLI tools via uv. Bump this to re-run: v1
+set -euo pipefail
+eval "$(/opt/homebrew/bin/brew shellenv)"
+uv python install 3.12 3.13
+for tool in bedrock-agentcore-starter-toolkit pre-commit ipython; do
+  uv tool install --python 3.12 "$tool" || uv tool upgrade "$tool"
+done

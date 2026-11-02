@@ -1,0 +1,33 @@
+{{- /* Prompts run once on `chezmoi init`. Re-run `chezmoi init` to change answers. */ -}}
+{{- $name := promptStringOnce . "name" "Full name (for git)" (env "DEVENV_NAME") -}}
+{{- $email := promptStringOnce . "email" "Email (for git commits)" (env "DEVENV_EMAIL") -}}
+{{- $bindings := promptBoolOnce . "bindings" "Install bindings profile (Java, Maven, Gradle, .NET)" (eq (env "DEVENV_BINDINGS") "1") -}}
+{{- $ssoUrl := promptStringOnce . "aws_sso_start_url" "AWS access portal URL from IAM Identity Center, e.g. https://d-xxxx.awsapps.com/start (blank to skip AWS; see README 'AWS setup')" "" -}}
+{{- $ssoRegion := "us-east-1" -}}
+{{- $account := "" -}}
+{{- $ssoRole := "AdministratorAccess" -}}
+{{- $adminRole := "" -}}
+{{- $region := "us-west-2" -}}
+{{- if $ssoUrl -}}
+{{-   $ssoRegion = promptStringOnce . "aws_sso_region" "Identity Center region" "us-east-1" -}}
+{{-   $account = promptStringOnce . "aws_account_id" "AWS account ID" "" -}}
+{{-   $ssoRole = promptStringOnce . "aws_sso_role" "Identity Center permission set assigned to you (README default: AdministratorAccess)" "AdministratorAccess" -}}
+{{-   $adminRole = promptStringOnce . "aws_admin_role" "Optional extra IAM role to assume after login. Most people leave this BLANK (see README 'Optional: separate admin role')" "" -}}
+{{-   $region = promptStringOnce . "aws_region" "Default AWS region" "us-west-2" -}}
+{{- end -}}
+
+sourceDir = {{ .chezmoi.workingTree | quote }}
+
+[data]
+  name = {{ $name | quote }}
+  email = {{ $email | quote }}
+  bindings = {{ $bindings }}
+  aws_sso_start_url = {{ $ssoUrl | quote }}
+  aws_sso_region = {{ $ssoRegion | quote }}
+  aws_account_id = {{ $account | quote }}
+  aws_sso_role = {{ $ssoRole | quote }}
+  aws_admin_role = {{ $adminRole | quote }}
+  aws_region = {{ $region | quote }}
+
+[diff]
+  exclude = ["scripts"]

@@ -1,0 +1,14 @@
+#!/bin/bash
+# extensions {{ include "dot_config/vscode/extensions.txt" | sha256sum }}
+set -euo pipefail
+CODE="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+if [[ ! -x "$CODE" ]]; then
+  echo "==> VS Code not found in /Applications; skipping extensions"
+  exit 0
+fi
+installed="$("$CODE" --list-extensions | tr '[:upper:]' '[:lower:]')"
+grep -vE '^\s*(#|$)' "$HOME/.config/vscode/extensions.txt" | while read -r ext; do
+  if ! grep -qx "$(tr '[:upper:]' '[:lower:]' <<<"$ext")" <<<"$installed"; then
+    "$CODE" --install-extension "$ext"
+  fi
+done

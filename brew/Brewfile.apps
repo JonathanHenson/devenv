@@ -1,0 +1,7 @@
+# GUI apps. Installed on every machine; add casks here as you adopt them.
+# Note: apps installed outside Homebrew (e.g. VS Code downloaded manually)
+# should stay out of this file, or brew will refuse to overwrite them.
+#
+# cask "rectangle"
+# cask "raycast"
+# cask "firefox"

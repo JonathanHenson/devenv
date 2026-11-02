@@ -1,0 +1,15 @@
+# Managed by devenv (chezmoi): edit in ~/source/devenv, then `chezmoi apply`.
+# Runs for every zsh, including non-interactive ones (scripts, editors, agents).
+source "$HOME/.config/zsh/path.zsh"
+
+export EDITOR=vim
+export VISUAL=vim
+export CMAKE_GENERATOR=Ninja
+export CMAKE_EXPORT_COMPILE_COMMANDS=ON
+export HOMEBREW_NO_ENV_HINTS=1
+{{- if .aws_account_id }}
+export AWS_PROFILE=personal
+export AWS_REGION={{ .aws_region }}
+{{- end }}
+
+[[ -f "$HOME/.zshenv.local" ]] && source "$HOME/.zshenv.local"

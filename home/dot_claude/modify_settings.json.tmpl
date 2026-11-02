@@ -1,0 +1,15 @@
+#!/bin/bash
+# Merges devenv's Claude Code settings (agents/claude/settings.json) into
+# ~/.claude/settings.json. Keys written by Claude or the app are preserved;
+# permission lists are unioned rather than replaced.
+current="$(cat)"
+[[ -z "$current" ]] && current='{}'
+repo={{ joinPath .chezmoi.workingTree "agents/claude/settings.json" | quote }}
+/usr/bin/jq --slurpfile r "$repo" '
+  . as $cur | $r[0] as $repo
+  | ($cur * $repo)
+  | reduce ("allow","ask","deny") as $k (.;
+      if ($cur.permissions[$k] // $repo.permissions[$k]) then
+        .permissions[$k] = ((($cur.permissions[$k] // []) + ($repo.permissions[$k] // [])) | unique)
+      else . end)
+' <<<"$current" || printf '%s' "$current"

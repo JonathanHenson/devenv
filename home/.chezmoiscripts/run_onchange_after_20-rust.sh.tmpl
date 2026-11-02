@@ -1,0 +1,16 @@
+#!/bin/bash
+# Rust toolchain + cargo tools. Bump this to re-run: v1
+set -euo pipefail
+eval "$(/opt/homebrew/bin/brew shellenv)"
+export PATH="$HOME/.cargo/bin:$PATH"
+if ! command -v rustup >/dev/null 2>&1; then
+  echo "==> Installing rustup"
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+fi
+rustup toolchain install stable --profile default
+rustup default stable
+rustup component add rust-analyzer clippy rustfmt llvm-tools
+rustup target add aarch64-unknown-linux-gnu
+echo "==> cargo tools"
+cargo binstall --no-confirm --locked \
+  cargo-lambda cargo-zigbuild cargo-nextest cargo-watch cargo-edit cargo-expand

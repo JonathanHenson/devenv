@@ -1,0 +1,17 @@
+# VS Code extensions installed by devenv (one id per line).
+# C / C++
+llvm-vs-code-extensions.vscode-clangd
+ms-vscode.cmake-tools
+vadimcn.vscode-lldb
+# Rust
+rust-lang.rust-analyzer
+tamasfe.even-better-toml
+# Python
+ms-python.python
+charliermarsh.ruff
+# AWS
+amazonwebservices.aws-toolkit-vscode
+# General
+eamodio.gitlens
+timonwong.shellcheck
+anthropic.claude-code

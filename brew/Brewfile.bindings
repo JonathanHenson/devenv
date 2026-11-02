@@ -1,0 +1,5 @@
+# Optional "bindings" profile: JVM and .NET toolchains.
+# Java itself (Temurin LTS) is pinned in ~/.config/mise/config.toml.
+brew "maven"
+brew "gradle"
+cask "dotnet-sdk"

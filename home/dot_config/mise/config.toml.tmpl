@@ -1,0 +1,11 @@
+# Global runtime versions (managed by devenv). Per-project versions go in
+# a project's own mise.toml.
+[tools]
+node = "lts"
+"npm:aws-cdk" = "latest"
+{{- if .bindings }}
+java = "temurin-21"
+{{- end }}
+
+[settings]
+not_found_auto_install = false

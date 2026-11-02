@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# devenv: helper for the devenv repo. Run `devenv help` for commands.
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+SSO_SESSION=personal
+
+green() { printf '\033[32m%s\033[0m' "$*"; }
+red()   { printf '\033[31m%s\033[0m' "$*"; }
+yellow(){ printf '\033[33m%s\033[0m' "$*"; }
+
+usage() {
+  cat <<EOF
+devenv: manage this machine's dev environment ($ROOT)
+
+  doctor [--ci]        check tools, PATH, git signing, gh, AWS and Claude setup
+  apply                chezmoi apply (re-render dotfiles, run changed scripts)
+  update               git pull, then upgrade brew, rust, uv tools, mise, and apply
+  edit                 open the repo in VS Code
+  ssh-setup            create the SSH key if needed and upload it to GitHub (auth + signing)
+  aws-login            aws sso login for the personal session
+  aws-check            show which AWS identity/role is active
+  secret get <id>      print a secret from AWS Secrets Manager
+  secret put <id>      create or update a secret (value read from stdin)
+EOF
+}
+
+FAILS=0
+check() { # check <label> <command...>
+  local label="$1"; shift
+  local out
+  if out="$("$@" 2>&1)"; then
+    printf '  %s %-22s %s\n' "$(green ok)" "$label" "$(head -1 <<<"$out")"
+  else
+    printf '  %s %-22s %s\n' "$(red FAIL)" "$label" "$(head -1 <<<"$out")"
+    FAILS=$((FAILS + 1))
+  fi
+}
+warn() { printf '  %s %-22s %s\n' "$(yellow warn)" "$1" "$2"; }
+
+doctor() {
+  local ci="${1:-}"
+  echo "Tools"
+  check brew        brew --version
+  check git         git --version
+  check gh          gh --version
+  check chezmoi     chezmoi --version
+  check cmake       cmake --version
+  check ninja       ninja --version
+  check clang       clang --version
+  check clangd      clangd --version
+  check clang-format clang-format --version
+  check rustc       rustc --version
+  check cargo-lambda cargo lambda --version
+  check cargo-zigbuild cargo-zigbuild -V
+  check uv          uv --version
+  check python3.12  uv python find 3.12
+  check node        node --version
+  check cdk         cdk --version
+  check aws         aws --version
+  check agentcore   agentcore --help
+  check docker      bash -c 'command -v docker >/dev/null || { echo "open OrbStack once to install the docker CLI"; false; }; docker --version'
+  check claude      claude --version
+  if chezmoi data --format json 2>/dev/null | grep -q '"bindings": true'; then
+    check java  java -version
+    check mvn   mvn --version
+    check dotnet dotnet --version
+  fi
+
+  echo "PATH"
+  check "clang is Apple's" bash -c '[[ "$(command -v clang)" == /usr/bin/clang ]] && command -v clang'
+  check "cargo in ~/.cargo" bash -c '[[ "$(command -v cargo)" == "$HOME/.cargo/bin/cargo" ]] && command -v cargo'
+
+  echo "Dotfiles"
+  check "chezmoi in sync" bash -c '[[ -z "$(chezmoi status 2>/dev/null)" ]] && echo clean || { chezmoi status; false; }'
+
+  [[ "$ci" == "--ci" ]] && { summary; return; }
+
+  echo "Identity"
+  if [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
+    check "ssh key" ssh-keygen -lf "$HOME/.ssh/id_ed25519.pub"
+    check "git signing" bash -c '[[ "$(git config gpg.format)" == ssh ]] && echo "commits signed with ssh key"'
+  else
+    warn "ssh key" "none yet; run: devenv ssh-setup"
+  fi
+  check "gh auth" gh auth status
+  if [[ -f "$HOME/.aws/config" ]]; then
+    check "aws identity" aws sts get-caller-identity --query Arn --output text
+  else
+    warn "aws" "not configured; run: chezmoi init (answer the AWS prompts)"
+  fi
+  check "claude mcp" bash -c 'claude mcp list 2>/dev/null | grep -c aws- | xargs -I{} echo "{} aws MCP servers"'
+  summary
+}
+
+summary() {
+  echo
+  if (( FAILS )); then echo "$(red "$FAILS check(s) failed")"; exit 1; fi
+  echo "$(green "All checks passed")"
+}
+
+ssh_setup() {
+  local key="$HOME/.ssh/id_ed25519"
+  if [[ ! -f "$key" ]]; then
+    mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+    ssh-keygen -t ed25519 -C "$(git config user.email) $(scutil --get LocalHostName 2>/dev/null || hostname -s)" -f "$key"
+    ssh-add --apple-use-keychain "$key" || true
+  fi
+  gh auth status >/dev/null 2>&1 || gh auth login --git-protocol https --web
+  local title; title="$(scutil --get ComputerName 2>/dev/null || hostname -s)"
+  gh ssh-key add "$key.pub" --type authentication --title "$title" || true
+  gh ssh-key add "$key.pub" --type signing --title "$title (signing)" || true
+  echo "Re-rendering git config to enable commit signing..."
+  chezmoi apply
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  doctor)    doctor "${1:-}" ;;
+  apply)     chezmoi apply "$@" ;;
+  update)
+    git -C "$ROOT" pull --rebase --autostash
+    brew update && brew upgrade
+    rustup update
+    uv tool upgrade --all
+    mise upgrade --yes
+    chezmoi apply ;;
+  edit)      code "$ROOT" ;;
+  ssh-setup) ssh_setup ;;
+  aws-login) aws sso login --sso-session "$SSO_SESSION" ;;
+  aws-check) aws sts get-caller-identity --output table ;;
+  secret)
+    sub="${1:-}"; id="${2:-}"
+    [[ -z "$id" ]] && { usage; exit 2; }
+    case "$sub" in
+      get) aws secretsmanager get-secret-value --secret-id "$id" --query SecretString --output text ;;
+      put)
+        [[ -t 0 ]] && { printf 'Value for %s: ' "$id"; read -rs value; echo; } || value="$(cat)"
+        if aws secretsmanager describe-secret --secret-id "$id" >/dev/null 2>&1; then
+          aws secretsmanager put-secret-value --secret-id "$id" --secret-string "$value" >/dev/null
+        else
+          aws secretsmanager create-secret --name "$id" --secret-string "$value" >/dev/null
+        fi
+        echo "stored $id" ;;
+      *) usage; exit 2 ;;
+    esac ;;
+  help|-h|--help) usage ;;
+  *) usage; exit 2 ;;
+esac

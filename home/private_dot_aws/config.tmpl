@@ -1,0 +1,27 @@
+# Managed by devenv (chezmoi). Log in with: aws sso login --sso-session personal
+[sso-session personal]
+sso_start_url = {{ .aws_sso_start_url }}
+sso_region = {{ .aws_sso_region }}
+sso_registration_scopes = sso:account:access
+
+# Short-lived credentials from Identity Center (browser login, no keys on disk).
+[profile personal-sso]
+sso_session = personal
+sso_account_id = {{ .aws_account_id }}
+sso_role_name = {{ .aws_sso_role }}
+region = {{ .aws_region }}
+output = json
+
+# The profile everything uses (AWS_PROFILE=personal is set in ~/.zshenv).
+[profile personal]
+{{- if .aws_admin_role }}
+role_arn = arn:aws:iam::{{ .aws_account_id }}:role/{{ .aws_admin_role }}
+source_profile = personal-sso
+role_session_name = {{ .chezmoi.username }}
+{{- else }}
+sso_session = personal
+sso_account_id = {{ .aws_account_id }}
+sso_role_name = {{ .aws_sso_role }}
+{{- end }}
+region = {{ .aws_region }}
+output = json

@@ -1,0 +1,27 @@
+# Prompt: directory, git, active toolchains, AWS profile.
+add_newline = false
+command_timeout = 1000
+
+format = "$directory$git_branch$git_status$cmake$rust$python$nodejs$java$aws$cmd_duration$line_break$character"
+
+[directory]
+truncation_length = 4
+truncate_to_repo = true
+
+[aws]
+format = '[$symbol($profile)(\($region\))(\[$duration\])]($style) '
+symbol = "aws "
+
+[cmd_duration]
+min_time = 2000
+
+[rust]
+format = '[$symbol($version)]($style) '
+[python]
+format = '[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style) '
+[nodejs]
+format = '[$symbol($version)]($style) '
+[java]
+format = '[$symbol($version)]($style) '
+[cmake]
+format = '[$symbol($version)]($style) '

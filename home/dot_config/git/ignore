@@ -1,0 +1,15 @@
+.DS_Store
+*.swp
+.idea/
+.vscode/*.log
+build/
+cmake-build-*/
+compile_commands.json
+.cache/clangd/
+target/
+cdk.out/
+.venv/
+__pycache__/
+.direnv/
+.envrc.local
+.env

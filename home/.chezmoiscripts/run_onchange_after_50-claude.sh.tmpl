@@ -1,0 +1,15 @@
+#!/bin/bash
+# Registers user-scope MCP servers for Claude Code from agents/claude/mcp-servers.json.
+# servers {{ include (joinPath .chezmoi.workingTree "agents/claude/mcp-servers.json") | sha256sum }}
+set -euo pipefail
+eval "$(/opt/homebrew/bin/brew shellenv)"
+if ! command -v claude >/dev/null 2>&1; then
+  echo "==> claude CLI not found; skipping MCP setup"
+  exit 0
+fi
+SERVERS={{ joinPath .chezmoi.workingTree "agents/claude/mcp-servers.json" | quote }}
+for name in $(jq -r '.mcpServers | keys[]' "$SERVERS"); do
+  cfg="$(jq -c --arg n "$name" '.mcpServers[$n]' "$SERVERS")"
+  claude mcp remove --scope user "$name" </dev/null >/dev/null 2>&1 || true
+  claude mcp add-json --scope user "$name" "$cfg" </dev/null
+done

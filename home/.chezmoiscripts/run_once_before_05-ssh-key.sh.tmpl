@@ -1,0 +1,15 @@
+#!/bin/bash
+# Create a per-machine SSH key (used for GitHub auth and commit signing).
+# The passphrase is stored in the macOS Keychain. Upload with: devenv ssh-setup
+set -euo pipefail
+KEY="$HOME/.ssh/id_ed25519"
+[[ -f "$KEY" ]] && exit 0
+if [[ -n "${DEVENV_NONINTERACTIVE:-}" || ! -t 0 ]]; then
+  echo "==> Skipping SSH key creation (non-interactive). Run: devenv ssh-setup"
+  exit 0
+fi
+mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+echo "==> Creating SSH key $KEY (choose a passphrase; it is saved to your Keychain)"
+ssh-keygen -t ed25519 -C "{{ .email }} $(scutil --get LocalHostName 2>/dev/null || hostname -s)" -f "$KEY"
+ssh-add --apple-use-keychain "$KEY" || true
+echo "==> Key created. Upload it to GitHub later with: devenv ssh-setup"

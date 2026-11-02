@@ -1,0 +1,55 @@
+# Core tools, installed on every machine.
+
+# Version control
+brew "git"
+brew "gh"
+brew "git-delta"
+brew "chezmoi"
+
+# C / C++ toolchain (Apple clang stays the default compiler; llvm adds clangd,
+# clang-format, clang-tidy)
+brew "cmake"
+brew "ninja"
+brew "llvm"
+brew "ccache"
+brew "pkgconf"
+
+# Rust extras (rustup itself is installed by script 20)
+brew "cargo-binstall"
+brew "zig"            # linker for cargo-zigbuild / cargo-lambda cross builds
+
+# Python
+brew "uv"
+brew "ruff"
+
+# Runtimes manager (Node for CDK, Java for bindings)
+brew "mise"
+
+# AWS
+brew "awscli"
+cask "session-manager-plugin"
+
+# Containers (ARM64 Linux images for AgentCore, cross-platform testing)
+cask "orbstack"
+
+# Shell
+brew "starship"
+brew "zsh-autosuggestions"
+brew "zsh-syntax-highlighting"
+brew "fzf"
+brew "zoxide"
+brew "direnv"
+brew "eza"
+brew "bat"
+
+# CLI utilities
+brew "ripgrep"
+brew "fd"
+brew "jq"
+brew "yq"
+brew "shellcheck"
+brew "shfmt"
+brew "hyperfine"
+
+# Agents
+cask "claude-code"

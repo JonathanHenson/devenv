@@ -1,0 +1,10 @@
+#!/bin/bash
+# Merges devenv's VS Code settings (agents/vscode/settings.json) into the live file.
+# Keys you change in the VS Code UI that devenv doesn't manage are preserved.
+current="$(cat)"
+[[ -z "$current" ]] && current='{}'
+repo={{ joinPath .chezmoi.workingTree "agents/vscode/settings.json" | quote }}
+if ! /usr/bin/jq -S --slurpfile repo "$repo" '. * $repo[0]' <<<"$current" 2>/dev/null; then
+  echo "devenv: VS Code settings.json isn't plain JSON (comments?); left unchanged" >&2
+  printf '%s' "$current"
+fi

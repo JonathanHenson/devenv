@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(rg:*)",
+      "Bash(fd:*)",
+      "Bash(cmake:*)",
+      "Bash(ctest:*)",
+      "Bash(ninja:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo nextest:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo lambda build:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(aws sts get-caller-identity:*)",
+      "Bash(cdk synth:*)",
+      "Bash(cdk diff:*)",
+      "Bash(cdk ls:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)"
+    ],
+    "ask": [
+      "Bash(cdk deploy:*)",
+      "Bash(cdk destroy:*)",
+      "Bash(agentcore launch:*)",
+      "Bash(agentcore destroy:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
