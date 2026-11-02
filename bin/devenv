@@ -26,6 +26,7 @@ EOF
 }
 
 FAILS=0
+CI_MODE=""
 check() { # check <label> <command...>
   local label="$1"; shift
   local out
@@ -37,9 +38,47 @@ check() { # check <label> <command...>
   fi
 }
 warn() { printf '  %s %-22s %s\n' "$(yellow warn)" "$1" "$2"; }
+# Like check, but only warns in CI (for things a fresh CI runner can't have).
+soft() {
+  local label="$1"; shift
+  local out
+  if [[ -n "$CI_MODE" ]] && ! out="$("$@" 2>&1)"; then
+    warn "$label" "$(head -1 <<<"$out")"
+  else
+    check "$label" "$@"
+  fi
+}
+
+# Individual checks that need more than one command.
+has_docker() {
+  command -v docker >/dev/null || { echo "open OrbStack once to install the docker CLI"; return 1; }
+  docker --version
+}
+clang_is_apple() {
+  local p; p="$(command -v clang)"
+  echo "$p"; [[ "$p" == /usr/bin/clang ]]
+}
+cargo_from_rustup() {
+  local p; p="$(command -v cargo)"
+  echo "$p"; [[ "$p" == "${CARGO_HOME:-$HOME/.cargo}/bin/cargo" ]]
+}
+chezmoi_clean() {
+  local st; st="$(chezmoi status 2>/dev/null)"
+  if [[ -z "$st" ]]; then echo clean; else echo "$st"; return 1; fi
+}
+git_signing() {
+  [[ "$(git config gpg.format)" == ssh ]] && echo "commits signed with ssh key"
+}
+aws_identity() {
+  aws sts get-caller-identity --query Arn --output text 2>/dev/null ||
+    { echo "not logged in; run: devenv aws-login"; return 1; }
+}
+claude_mcp() {
+  echo "$(claude mcp list 2>/dev/null | grep -c aws-) aws MCP servers"
+}
 
 doctor() {
-  local ci="${1:-}"
+  [[ "${1:-}" == "--ci" ]] && CI_MODE=1
   echo "Tools"
   check brew        brew --version
   check git         git --version
@@ -59,7 +98,7 @@ doctor() {
   check cdk         cdk --version
   check aws         aws --version
   check agentcore   agentcore --help
-  check docker      bash -c 'command -v docker >/dev/null || { echo "open OrbStack once to install the docker CLI"; false; }; docker --version'
+  soft  docker      has_docker
   check claude      claude --version
   if chezmoi data --format json 2>/dev/null | grep -q '"bindings": true'; then
     check java  java -version
@@ -68,35 +107,35 @@ doctor() {
   fi
 
   echo "PATH"
-  check "clang is Apple's" bash -c '[[ "$(command -v clang)" == /usr/bin/clang ]] && command -v clang'
-  check "cargo in ~/.cargo" bash -c '[[ "$(command -v cargo)" == "$HOME/.cargo/bin/cargo" ]] && command -v cargo'
+  check "clang is Apple's" clang_is_apple
+  soft  "cargo from rustup" cargo_from_rustup
 
   echo "Dotfiles"
-  check "chezmoi in sync" bash -c '[[ -z "$(chezmoi status 2>/dev/null)" ]] && echo clean || { chezmoi status; false; }'
+  check "chezmoi in sync" chezmoi_clean
 
-  [[ "$ci" == "--ci" ]] && { summary; return; }
+  [[ -n "$CI_MODE" ]] && { summary; return; }
 
   echo "Identity"
   if [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
     check "ssh key" ssh-keygen -lf "$HOME/.ssh/id_ed25519.pub"
-    check "git signing" bash -c '[[ "$(git config gpg.format)" == ssh ]] && echo "commits signed with ssh key"'
+    check "git signing" git_signing
   else
     warn "ssh key" "none yet; run: devenv ssh-setup"
   fi
   check "gh auth" gh auth status
   if [[ -f "$HOME/.aws/config" ]]; then
-    check "aws identity" bash -c 'aws sts get-caller-identity --query Arn --output text 2>/dev/null || { echo "not logged in; run: devenv aws-login"; false; }'
+    check "aws identity" aws_identity
   else
     warn "aws" "not configured; run: chezmoi init (answer the AWS prompts)"
   fi
-  check "claude mcp" bash -c 'claude mcp list 2>/dev/null | grep -c aws- | xargs -I{} echo "{} aws MCP servers"'
+  check "claude mcp" claude_mcp
   summary
 }
 
 summary() {
   echo
-  if (( FAILS )); then echo "$(red "$FAILS check(s) failed")"; exit 1; fi
-  echo "$(green "All checks passed")"
+  if (( FAILS )); then red "$FAILS check(s) failed"; echo; exit 1; fi
+  green "All checks passed"; echo
 }
 
 ssh_setup() {

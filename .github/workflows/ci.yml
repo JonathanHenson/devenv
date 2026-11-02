@@ -10,7 +10,7 @@ jobs:
   lint:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: brew install shellcheck
       - name: shellcheck
         run: shellcheck install.sh bin/devenv home/.chezmoiscripts/run_once_before_00-xcode-clt.sh
@@ -30,7 +30,7 @@ jobs:
       DEVENV_BINDINGS: ${{ matrix.bindings }}
       HOMEBREW_NO_AUTO_UPDATE: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: install
         run: ./install.sh
       - name: idempotent (second apply changes nothing)
