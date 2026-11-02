@@ -1,4 +1,6 @@
 # Managed by devenv (chezmoi). Host-specific entries go in ~/.ssh/config.local.
+# OrbStack Linux machines (`ssh orb`); skipped if not installed. Must precede Host blocks.
+Include ~/.orbstack/ssh/config
 Include ~/.ssh/config.local
 
 Host github.com
