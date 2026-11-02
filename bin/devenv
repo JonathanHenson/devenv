@@ -85,7 +85,7 @@ doctor() {
   fi
   check "gh auth" gh auth status
   if [[ -f "$HOME/.aws/config" ]]; then
-    check "aws identity" aws sts get-caller-identity --query Arn --output text
+    check "aws identity" bash -c 'aws sts get-caller-identity --query Arn --output text 2>/dev/null || { echo "not logged in; run: devenv aws-login"; false; }'
   else
     warn "aws" "not configured; run: chezmoi init (answer the AWS prompts)"
   fi
